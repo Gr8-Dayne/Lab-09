@@ -7,35 +7,15 @@ const superagent = require('superagent');
 const pg = require('pg');
 const app = express();
 
+const Geolocation = require('./modules/location');
+const Forecast = require('./modules/weather.js');
+const Event = require('./modules/events.js');
+
 require('dotenv').config();
 app.use(cors());
 
 const client = new pg.Client(process.env.DATABASE_URL);
 client.on('err', err => { throw err; });
-
-app.get('/add', (req, res) => {
-  res.status(255).json({ location: 'Seattle '});
-});
-
-
-function Geolocation(latitude, longitude, formatted_address, search_query) {
-  this.latitude = latitude,
-  this.longitude = longitude,
-  this.formatted_query = formatted_address,
-  this.search_query = search_query
-}
-
-function Forcast(forecast, time) {
-  this.forecast = forecast,
-  this.time = new Date(time * 1000).toDateString();
-}
-
-function Event(link, name, date, summary) {
-  this.link = link,
-  this.name = name,
-  this.event_date = date,
-  this.summary = summary
-}
 
 app.get('/location', (req, res) => {
 
@@ -58,7 +38,6 @@ app.get('/location', (req, res) => {
 
 });
 
-
 app.get('/weather', (req, res) => {
 
   superagent.get(`https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${req.query.data.latitude},${req.query.data.longitude}`).then(response => {
@@ -66,7 +45,7 @@ app.get('/weather', (req, res) => {
     let dailyData = response.body.daily.data;
 
     let nextForecast = dailyData.map((val) => {
-      let nextForeCastObj = new Forcast(val.summary, val.time);
+      let nextForeCastObj = new Forecast(val.summary, val.time);
       return nextForeCastObj;
     });
 
@@ -91,7 +70,9 @@ app.get('/events', (req, res) => {
   });
 });
 
-
+app.get('/add', (req, res) => {
+  res.status(255).json({ location: 'Seattle '});
+});
 
 app.listen(PORT, () => {
   console.log(`App is on PORT: ${PORT}`);
